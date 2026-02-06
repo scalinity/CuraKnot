@@ -1,0 +1,37 @@
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Xcode
+ios/DerivedData/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+*.pbxuser
+*.perspectivev3
+*.xccheckout
+*.xcscmblueprint
+xcuserdata/
+
+# SPM build artifacts
+ios/.build/
+ios/.swiftpm/
+
+# Supabase
+.supabase/
+supabase/.temp/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Claude Code
+.claude/command-history.log
+
+# Node
+node_modules/
+
+# Deno
+deno.lock
