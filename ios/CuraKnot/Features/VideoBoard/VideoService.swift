@@ -586,9 +586,11 @@ final class VideoService: ObservableObject {
         durationSeconds: Double,
         progressHandler: @escaping @Sendable (Double) async -> Void
     ) async throws -> VideoMessage {
-        // Get file size
-        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
-        let fileSizeBytes = attributes[.size] as? Int64 ?? 0
+        // Get file size off main thread to avoid blocking UI
+        let fileSizeBytes = try await Task.detached {
+            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            return attributes[.size] as? Int64 ?? 0
+        }.value
 
         // Check rate limit first (client-side check for UX)
         let rateLimit = try await checkRateLimit()
