@@ -54,6 +54,98 @@ interface CircleMemberRow {
   user_id: string;
 }
 
+interface LLMSummaryInput {
+  meetingTitle: string;
+  duration: number | null;
+  attendeeNames: string;
+  agendaItems: AgendaItemRow[];
+  actionItems: ActionItemRow[];
+}
+
+async function generateLLMSummary(
+  input: LLMSummaryInput,
+): Promise<string | null> {
+  const apiKey = Deno.env.get("XAI_API_KEY");
+  if (!apiKey) return null;
+
+  const completedItems = input.agendaItems.filter(
+    (item) => item.status === "COMPLETED",
+  );
+
+  const meetingDataPrompt = [
+    `Meeting: ${input.meetingTitle}`,
+    input.duration ? `Duration: ${input.duration} minutes` : null,
+    input.attendeeNames ? `Attendees: ${input.attendeeNames}` : null,
+    "",
+    "Agenda Items Discussed:",
+    ...completedItems.map((item, idx) => {
+      const parts = [`${idx + 1}. ${item.title}`];
+      if (item.notes) parts.push(`   Notes: ${item.notes}`);
+      if (item.decision) parts.push(`   Decision: ${item.decision}`);
+      return parts.join("\n");
+    }),
+    "",
+    input.actionItems.length > 0 ? "Action Items:" : null,
+    ...input.actionItems.map((item, idx) => {
+      const assignee = item.assigned_user?.display_name ?? "Unassigned";
+      const due = item.due_date ? ` (due ${item.due_date})` : "";
+      return `${idx + 1}. ${item.description} — ${assignee}${due}`;
+    }),
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  try {
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "grok-4-1-fast-reasoning",
+        messages: [
+          {
+            role: "system",
+            content: `You are a concise meeting summarizer for a family caregiving coordination app.
+Produce a clear, well-structured summary of the family meeting. Use short sections with headers.
+Rules:
+- Only use information provided — never invent details, names, medications, or medical advice.
+- Keep the summary under 500 words.
+- Use plain language appropriate for family caregivers.
+- Structure: Brief overview, Key Decisions, Action Items, Notable Discussion Points.
+- Omit any section that has no content.
+- Do not include greetings, sign-offs, or meta-commentary.`,
+          },
+          {
+            role: "user",
+            content: `Summarize this family care meeting:\n\n${meetingDataPrompt}`,
+          },
+        ],
+        max_tokens: 800,
+        temperature: 0.3,
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (
+      !content ||
+      typeof content !== "string" ||
+      content.trim().length === 0
+    ) {
+      return null;
+    }
+
+    return content.trim();
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
@@ -317,19 +409,51 @@ serve(async (req) => {
       .map((item) => `${item.title}:\n${item.notes}`)
       .join("\n\n");
 
-    const summaryParts: string[] = [];
-    if (duration) summaryParts.push(`Duration: ${duration} minutes`);
-    if (attendeeNames) summaryParts.push(`Attendees: ${attendeeNames}`);
-    if (decisions) summaryParts.push(`\nDecisions Made:\n${decisions}`);
-    if (actionItemsText)
-      summaryParts.push(`\nAction Items:\n${actionItemsText}`);
-    if (notesText) summaryParts.push(`\nDiscussion Notes:\n${notesText}`);
+    // Try LLM-powered summary first, fall back to template
+    let summaryText: string;
+    let usedLLM = false;
 
-    const fullSummaryText = summaryParts.join("\n");
-    const summaryText =
-      fullSummaryText.length > 600
-        ? fullSummaryText.substring(0, 597) + "..."
-        : fullSummaryText;
+    const llmSummary = await generateLLMSummary({
+      meetingTitle: meeting.title,
+      duration,
+      attendeeNames,
+      agendaItems,
+      actionItems,
+    });
+
+    if (llmSummary) {
+      summaryText =
+        llmSummary.length > 600
+          ? llmSummary.substring(0, 597) + "..."
+          : llmSummary;
+      usedLLM = true;
+
+      // Increment AI_MESSAGE usage for metered billing
+      try {
+        await supabaseService.rpc("increment_usage", {
+          p_user_id: user.id,
+          p_circle_id: meeting.circle_id,
+          p_metric_type: "AI_MESSAGE",
+        });
+      } catch {
+        // Best-effort usage tracking — don't block summary generation
+      }
+    } else {
+      // Fallback: template-based summary
+      const summaryParts: string[] = [];
+      if (duration) summaryParts.push(`Duration: ${duration} minutes`);
+      if (attendeeNames) summaryParts.push(`Attendees: ${attendeeNames}`);
+      if (decisions) summaryParts.push(`\nDecisions Made:\n${decisions}`);
+      if (actionItemsText)
+        summaryParts.push(`\nAction Items:\n${actionItemsText}`);
+      if (notesText) summaryParts.push(`\nDiscussion Notes:\n${notesText}`);
+
+      const fullSummaryText = summaryParts.join("\n");
+      summaryText =
+        fullSummaryText.length > 600
+          ? fullSummaryText.substring(0, 597) + "..."
+          : fullSummaryText;
+    }
 
     // Build handoff title (no PHI - use date instead of meeting title)
     const meetingDate = meeting.started_at
@@ -573,6 +697,7 @@ serve(async (req) => {
         metadata_json: {
           handoff_id: handoff.id,
           tasks_created: tasksCreated.length,
+          llm_summary: usedLLM,
         },
       });
 
