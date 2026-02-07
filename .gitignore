@@ -61,7 +61,7 @@ ios/.swiftpm/
 Packages/
 Package.pins
 Package.resolved
-!ios/Package.resolved
+!ios/**/Package.resolved
 
 # ========================
 # CocoaPods (if ever used)
@@ -83,18 +83,20 @@ supabase/.env.*
 .env
 .env.*
 !.env.example
-*.local
+.env.local
+.env.*.local
 
 # iOS configuration with real credentials
 ios/Config.xcconfig
 ios/*.xcconfig
 !ios/*.xcconfig.example
 
-# Certificates, keys, keystores
+# Certificates, keys, keystores (negation for asset catalog resources)
 *.p8
 *.p12
 *.pem
 *.key
+!ios/CuraKnot/Resources/**/*.key
 *.keystore
 *.jks
 *.cer
