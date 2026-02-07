@@ -20,7 +20,7 @@ struct RatingStars: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(rating) out of \(maxRating) stars")
+        .accessibilityLabel(String(localized: "\(rating) out of \(maxRating) stars"))
         .accessibilityValue(onTap != nil ? "\(rating)" : "")
         .accessibilityAdjustableAction { direction in
             guard let onTap = onTap else { return }

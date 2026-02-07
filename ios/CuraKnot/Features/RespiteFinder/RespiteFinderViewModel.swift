@@ -52,6 +52,8 @@ final class RespiteFinderViewModel: NSObject, ObservableObject, CLLocationManage
 
     deinit {
         searchTask?.cancel()
+        locationManager.stopUpdatingLocation()
+        locationManager.delegate = nil
     }
 
     // MARK: - Location
@@ -236,15 +238,15 @@ final class RespiteFinderViewModel: NSObject, ObservableObject, CLLocationManage
 
     // MARK: - Available Services (for filter chips)
 
-    static let commonServices = [
-        "Personal Care",
-        "Meal Preparation",
-        "Medication Reminders",
-        "Companionship",
-        "Transportation",
-        "Light Housekeeping",
-        "Memory Care",
-        "Physical Therapy",
-        "Skilled Nursing"
+    static let commonServices: [String] = [
+        String(localized: "Personal Care"),
+        String(localized: "Meal Preparation"),
+        String(localized: "Medication Reminders"),
+        String(localized: "Companionship"),
+        String(localized: "Transportation"),
+        String(localized: "Light Housekeeping"),
+        String(localized: "Memory Care"),
+        String(localized: "Physical Therapy"),
+        String(localized: "Skilled Nursing")
     ]
 }

@@ -277,9 +277,8 @@ serve(async (req) => {
       console.error(
         "Feature check failed for user:",
         user.id,
-        "error:",
+        "code:",
         featureError.code ?? "UNKNOWN",
-        featureError.message ?? "",
       );
     }
 
@@ -308,7 +307,6 @@ serve(async (req) => {
       console.error(
         "Provider search query failed:",
         queryError.code ?? "UNKNOWN",
-        queryError.message ?? "",
       );
       return new Response(
         JSON.stringify({

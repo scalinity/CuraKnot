@@ -191,8 +191,11 @@ struct RespiteHistoryView: View {
             try await withThrowingTaskGroup(of: Void.self) { group in
                 if service.canSubmitRequests {
                     group.addTask { @MainActor in
+                        try Task.checkCancellation()
                         do {
                             try await self.service.fetchRequests(circleId: self.circleId)
+                        } catch is CancellationError {
+                            throw CancellationError()
                         } catch {
                             if self.errorMessage == nil {
                                 self.errorMessage = error.localizedDescription
@@ -202,8 +205,11 @@ struct RespiteHistoryView: View {
                 }
                 if service.canTrackRespite {
                     group.addTask { @MainActor in
+                        try Task.checkCancellation()
                         do {
                             try await self.service.fetchRespiteLog(circleId: self.circleId)
+                        } catch is CancellationError {
+                            throw CancellationError()
                         } catch {
                             if self.errorMessage == nil {
                                 self.errorMessage = error.localizedDescription
@@ -211,14 +217,19 @@ struct RespiteHistoryView: View {
                         }
                     }
                     group.addTask { @MainActor in
+                        try Task.checkCancellation()
                         do {
                             try await self.service.fetchRespiteDaysThisYear(circleId: self.circleId, patientId: self.patientId)
+                        } catch is CancellationError {
+                            throw CancellationError()
                         } catch {
                             // Non-critical — year count is informational
                         }
                     }
                 }
-                try await group.waitForAll()
+                for try await _ in group {
+                    try Task.checkCancellation()
+                }
             }
             try Task.checkCancellation()
         } catch is CancellationError {
@@ -237,7 +248,7 @@ private struct RequestRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(request.providerName ?? "Provider")
+                Text(request.providerName ?? String(localized: "Provider"))
                     .font(.subheadline)
                     .bold()
                 Spacer()

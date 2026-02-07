@@ -462,7 +462,7 @@ private struct WriteReviewSheet: View {
                     .disabled(rating == 0 || isSubmitting)
                 }
             }
-            .disabled(isSubmitting)
+            .interactiveDismissDisabled(isSubmitting)
         }
     }
 

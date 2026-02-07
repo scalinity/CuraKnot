@@ -299,7 +299,6 @@ serve(async (req) => {
       console.error(
         "Respite request insert failed:",
         insertError?.code ?? "UNKNOWN",
-        insertError?.message ?? "",
       );
       return new Response(
         JSON.stringify({

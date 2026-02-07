@@ -41,11 +41,11 @@ struct RespiteProvider: Identifiable, Codable, Equatable {
 
         var displayName: String {
             switch self {
-            case .adultDay: return "Adult Day Care"
-            case .inHome: return "In-Home Care"
-            case .overnight: return "Overnight Care"
-            case .volunteer: return "Volunteer"
-            case .emergency: return "Emergency"
+            case .adultDay: return String(localized: "Adult Day Care")
+            case .inHome: return String(localized: "In-Home Care")
+            case .overnight: return String(localized: "Overnight Care")
+            case .volunteer: return String(localized: "Volunteer")
+            case .emergency: return String(localized: "Emergency")
             }
         }
 
@@ -69,11 +69,11 @@ struct RespiteProvider: Identifiable, Codable, Equatable {
 
         var displayName: String {
             switch self {
-            case .hourly: return "Hourly"
-            case .daily: return "Daily"
-            case .weekly: return "Weekly"
-            case .sliding: return "Sliding Scale"
-            case .free: return "Free"
+            case .hourly: return String(localized: "Hourly")
+            case .daily: return String(localized: "Daily")
+            case .weekly: return String(localized: "Weekly")
+            case .sliding: return String(localized: "Sliding Scale")
+            case .free: return String(localized: "Free")
             }
         }
     }
@@ -85,9 +85,9 @@ struct RespiteProvider: Identifiable, Codable, Equatable {
 
         var displayName: String {
             switch self {
-            case .unverified: return "Unverified"
-            case .verified: return "Verified"
-            case .featured: return "Featured"
+            case .unverified: return String(localized: "Unverified")
+            case .verified: return String(localized: "Verified")
+            case .featured: return String(localized: "Featured")
             }
         }
 
@@ -100,12 +100,26 @@ struct RespiteProvider: Identifiable, Codable, Equatable {
         }
     }
 
+    private static let distanceFormatterWhole: MeasurementFormatter = {
+        let formatter = MeasurementFormatter()
+        formatter.unitOptions = .providedUnit
+        formatter.numberFormatter.maximumFractionDigits = 0
+        return formatter
+    }()
+
+    private static let distanceFormatterDecimal: MeasurementFormatter = {
+        let formatter = MeasurementFormatter()
+        formatter.unitOptions = .providedUnit
+        formatter.numberFormatter.maximumFractionDigits = 1
+        return formatter
+    }()
+
     var formattedDistance: String? {
         guard let dist = distanceMiles else { return nil }
-        if dist < 1 {
-            return String(format: "%.1f mi", dist)
-        }
-        return String(format: "%.0f mi", dist)
+        let measurement = Measurement(value: dist, unit: UnitLength.miles)
+        return dist < 1
+            ? Self.distanceFormatterDecimal.string(from: measurement)
+            : Self.distanceFormatterWhole.string(from: measurement)
     }
 
     private static let currencyFormatter: NumberFormatter = {
@@ -117,8 +131,8 @@ struct RespiteProvider: Identifiable, Codable, Equatable {
 
     var formattedPriceRange: String? {
         guard let model = pricingModel else { return nil }
-        if model == .free { return "Free" }
-        if model == .sliding { return "Sliding Scale" }
+        if model == .free { return String(localized: "Free") }
+        if model == .sliding { return String(localized: "Sliding Scale") }
         guard let min = priceMin else { return nil }
         let minStr = Self.currencyFormatter.string(from: NSNumber(value: min)) ?? "$\(Int(min))"
         if let max = priceMax, max > min {
@@ -160,7 +174,8 @@ struct RespiteReview: Identifiable, Codable, Equatable {
     var reviewerName: String?
 
     var ratingStars: String {
-        String(repeating: "★", count: rating) + String(repeating: "☆", count: 5 - rating)
+        let clamped = max(0, min(5, rating))
+        return String(repeating: "★", count: clamped) + String(repeating: "☆", count: 5 - clamped)
     }
 
     enum CodingKeys: String, CodingKey {
@@ -206,8 +221,8 @@ struct RespiteRequest: Identifiable, Codable, Equatable {
 
         var displayName: String {
             switch self {
-            case .phone: return "Phone"
-            case .email: return "Email"
+            case .phone: return String(localized: "Phone")
+            case .email: return String(localized: "Email")
             }
         }
     }
@@ -221,11 +236,11 @@ struct RespiteRequest: Identifiable, Codable, Equatable {
 
         var displayName: String {
             switch self {
-            case .pending: return "Pending"
-            case .confirmed: return "Confirmed"
-            case .declined: return "Declined"
-            case .cancelled: return "Cancelled"
-            case .completed: return "Completed"
+            case .pending: return String(localized: "Pending")
+            case .confirmed: return String(localized: "Confirmed")
+            case .declined: return String(localized: "Declined")
+            case .cancelled: return String(localized: "Cancelled")
+            case .completed: return String(localized: "Completed")
             }
         }
 

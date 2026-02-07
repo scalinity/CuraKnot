@@ -15,19 +15,19 @@ enum RespiteFinderError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
-            return "You must be signed in."
+            return String(localized: "You must be signed in.")
         case .featureNotAvailable:
-            return "Upgrade your plan to access this feature."
+            return String(localized: "Upgrade your plan to access this feature.")
         case .validationError(let message):
             return message
         case .networkError:
-            return "A network error occurred. Please try again."
+            return String(localized: "A network error occurred. Please try again.")
         case .notAuthorized:
-            return "You are not authorized to perform this action."
+            return String(localized: "You are not authorized to perform this action.")
         case .notFound:
-            return "The requested resource was not found."
+            return String(localized: "The requested resource was not found.")
         case .upgradeRequired:
-            return "This feature requires a Plus or Family subscription."
+            return String(localized: "This feature requires a Plus or Family subscription.")
         }
     }
 }
@@ -103,10 +103,8 @@ final class RespiteFinderService: ObservableObject {
 
     // MARK: - Feature Access
 
-    /// All tiers can browse the provider directory
-    var canBrowseDirectory: Bool {
-        subscriptionManager.hasFeature(.respiteFinder)
-    }
+    /// All authenticated users can browse the provider directory (FREE tier included)
+    var canBrowseDirectory: Bool { true }
 
     /// PLUS and FAMILY can submit availability requests
     var canSubmitRequests: Bool {
@@ -148,10 +146,11 @@ final class RespiteFinderService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
 
+        let clampedRadius = min(max(radiusMiles, 1), 500)
         var requestBody = SearchProvidersBody(
             latitude: latitude,
             longitude: longitude,
-            radiusMiles: radiusMiles,
+            radiusMiles: clampedRadius,
             limit: limit,
             offset: offset
         )
@@ -160,12 +159,17 @@ final class RespiteFinderService: ObservableObject {
             requestBody.providerType = type.rawValue
         }
         if let services = services, !services.isEmpty {
-            requestBody.services = services
+            let validServices = services
+                .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty && $0.count <= 100 }
+                .prefix(20)
+            if !validServices.isEmpty {
+                requestBody.services = Array(validServices)
+            }
         }
-        if let rating = minRating, rating > 0 {
+        if let rating = minRating, rating > 0, rating <= 5 {
             requestBody.minRating = rating
         }
-        if let price = maxPrice, price > 0 {
+        if let price = maxPrice, price > 0, price <= 100_000 {
             requestBody.maxPrice = price
         }
         if verifiedOnly {
@@ -239,8 +243,7 @@ final class RespiteFinderService: ObservableObject {
                 )
             }
         } catch {
-            // Clear stale reviews so the UI doesn't show outdated data
-            self.selectedProviderReviews = []
+            // Keep existing reviews on error — stale data is better than empty for reviews
             logger.error("Failed to fetch reviews")
             throw RespiteFinderError.networkError(error)
         }
@@ -260,7 +263,7 @@ final class RespiteFinderService: ObservableObject {
         guard let userId = getCurrentUserId() else { throw RespiteFinderError.notAuthenticated }
 
         guard rating >= 1 && rating <= 5 else {
-            throw RespiteFinderError.validationError("Rating must be between 1 and 5.")
+            throw RespiteFinderError.validationError(String(localized: "Rating must be between 1 and 5."))
         }
 
         // Verify circle membership before submitting
@@ -319,10 +322,10 @@ final class RespiteFinderService: ObservableObject {
 
         let trimmedContact = contactValue.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedContact.isEmpty else {
-            throw RespiteFinderError.validationError("Contact information is required.")
+            throw RespiteFinderError.validationError(String(localized: "Contact information is required."))
         }
         guard endDate >= startDate else {
-            throw RespiteFinderError.validationError("End date must be on or after start date.")
+            throw RespiteFinderError.validationError(String(localized: "End date must be on or after start date."))
         }
 
         let requestBody = SubmitRequestBody(
@@ -346,7 +349,7 @@ final class RespiteFinderService: ObservableObject {
                 .invoke(body: requestBody)
 
             guard let request = response.request else {
-                throw RespiteFinderError.validationError("No request ID returned from server.")
+                throw RespiteFinderError.validationError(String(localized: "No request ID returned from server."))
             }
 
             return request.id
@@ -389,8 +392,9 @@ final class RespiteFinderService: ObservableObject {
                     .in("id", values: providerIds)
                     .execute()
                 let nameMap = Dictionary(uniqueKeysWithValues: providers.map { ($0.id, $0.name) })
+                let unknownProviderLabel = String(localized: "Unknown Provider")
                 for i in requests.indices {
-                    requests[i].providerName = nameMap[requests[i].providerId] ?? String(localized: "Unknown Provider")
+                    requests[i].providerName = nameMap[requests[i].providerId] ?? unknownProviderLabel
                 }
             }
 
@@ -466,12 +470,12 @@ final class RespiteFinderService: ObservableObject {
         guard isMember else { throw RespiteFinderError.notAuthorized }
 
         guard endDate >= startDate else {
-            throw RespiteFinderError.validationError("End date must be on or after start date.")
+            throw RespiteFinderError.validationError(String(localized: "End date must be on or after start date."))
         }
 
         let trimmedName = String(providerName.trimmingCharacters(in: .whitespacesAndNewlines).prefix(InputLimits.providerNameMax))
         guard !trimmedName.isEmpty else {
-            throw RespiteFinderError.validationError("Provider name is required.")
+            throw RespiteFinderError.validationError(String(localized: "Provider name is required."))
         }
 
         var params: [String: Any?] = [
@@ -494,11 +498,23 @@ final class RespiteFinderService: ObservableObject {
                 .insert(params)
                 .execute()
 
-            // Refresh log and year count independently so one failure doesn't block both
-            async let logRefresh: () = fetchRespiteLog(circleId: circleId)
-            async let yearRefresh: () = fetchRespiteDaysThisYear(circleId: circleId, patientId: patientId)
-            try? await logRefresh
-            try? await yearRefresh
+            // Refresh log and year count independently; preserve first error
+            var firstRefreshError: Error?
+            do {
+                try await fetchRespiteLog(circleId: circleId)
+            } catch {
+                firstRefreshError = error
+                logger.error("Failed to refresh respite log after add")
+            }
+            do {
+                try await fetchRespiteDaysThisYear(circleId: circleId, patientId: patientId)
+            } catch {
+                if firstRefreshError == nil { firstRefreshError = error }
+                logger.error("Failed to refresh year count after add")
+            }
+            if let refreshError = firstRefreshError {
+                throw RespiteFinderError.networkError(refreshError)
+            }
         } catch {
             logger.error("Failed to add respite log entry")
             throw RespiteFinderError.networkError(error)

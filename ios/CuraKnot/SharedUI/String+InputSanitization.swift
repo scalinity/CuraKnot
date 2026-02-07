@@ -4,15 +4,23 @@ extension String {
     /// Trims whitespace and limits to a maximum character count,
     /// also ensuring UTF-8 byte length stays within the limit.
     func trimmedAndLimited(to maxLength: Int) -> String {
-        var result = String(trimmingCharacters(in: .whitespacesAndNewlines).prefix(maxLength))
-        // Ensure UTF-8 byte length doesn't exceed the limit.
-        // Safety bound: at most result.count iterations (one dropLast per iteration).
-        var iterations = result.count
-        while result.utf8.count > maxLength && iterations > 0 {
-            result = String(result.dropLast())
-            iterations -= 1
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        // Fast path: if trimmed + prefixed string is already within UTF-8 byte limit
+        let result = String(trimmed.prefix(maxLength))
+        guard result.utf8.count > maxLength else { return result }
+        // Slow path: find the longest prefix whose UTF-8 byte count fits.
+        // Use binary search on character count to avoid O(n) dropLast loop.
+        var low = 0
+        var high = result.count
+        while low < high {
+            let mid = (low + high + 1) / 2
+            if String(trimmed.prefix(mid)).utf8.count <= maxLength {
+                low = mid
+            } else {
+                high = mid - 1
+            }
         }
-        return result
+        return String(trimmed.prefix(low))
     }
 
     /// Trims, limits, and returns nil if empty.
