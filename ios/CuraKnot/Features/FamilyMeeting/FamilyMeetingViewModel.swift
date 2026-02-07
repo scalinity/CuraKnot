@@ -223,8 +223,7 @@ final class FamilyMeetingViewModel: ObservableObject {
 
     func startMeeting() async {
         guard meeting.status == .scheduled else {
-            handleError(NSError(domain: "FamilyMeetingService", code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Meeting can only be started from scheduled status"]))
+            handleError(MeetingError.invalidState("Meeting can only be started from scheduled status"))
             return
         }
 
@@ -253,8 +252,7 @@ final class FamilyMeetingViewModel: ObservableObject {
     func completeItem() async {
         guard currentItemIndex < agendaItems.count else { return }
         guard agendaItems[currentItemIndex].status == .inProgress else {
-            handleError(NSError(domain: "FamilyMeetingService", code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Agenda item is no longer in progress"]))
+            handleError(MeetingError.invalidState("Agenda item is no longer in progress"))
             return
         }
 
@@ -278,8 +276,7 @@ final class FamilyMeetingViewModel: ObservableObject {
     func skipItem() async {
         guard currentItemIndex < agendaItems.count else { return }
         guard agendaItems[currentItemIndex].status == .inProgress else {
-            handleError(NSError(domain: "FamilyMeetingService", code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Agenda item is no longer in progress"]))
+            handleError(MeetingError.invalidState("Agenda item is no longer in progress"))
             return
         }
 
@@ -358,8 +355,7 @@ final class FamilyMeetingViewModel: ObservableObject {
 
     func endMeeting() async {
         guard meeting.status == .inProgress else {
-            handleError(NSError(domain: "FamilyMeetingService", code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Meeting can only be ended while in progress"]))
+            handleError(MeetingError.invalidState("Meeting can only be ended while in progress"))
             return
         }
 
@@ -407,8 +403,7 @@ final class FamilyMeetingViewModel: ObservableObject {
         }
 
         guard meeting.status == .completed else {
-            handleError(NSError(domain: "FamilyMeetingService", code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "Summary can only be generated for completed meetings"]))
+            handleError(MeetingError.invalidState("Summary can only be generated for completed meetings"))
             return nil
         }
 
@@ -444,5 +439,18 @@ final class FamilyMeetingViewModel: ObservableObject {
     private func handleError(_ error: Error) {
         self.error = error
         self.showError = true
+    }
+}
+
+// MARK: - Meeting Error
+
+enum MeetingError: LocalizedError {
+    case invalidState(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidState(let message):
+            return message
+        }
     }
 }

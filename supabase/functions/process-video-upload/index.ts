@@ -9,7 +9,8 @@ const corsHeaders = {
 
 // Validate UUID format
 function isValidUUID(str: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
 }
 
@@ -28,33 +29,31 @@ function isValidStorageKey(key: string): boolean {
 // IMPORTANT: First decode any pre-encoded entities, then sanitize to prevent XSS bypass
 function sanitizeCaption(caption: string | undefined): string | null {
   if (!caption) return null;
-  
+
   // Step 1: Decode any pre-encoded HTML entities to normalize input
   // This prevents XSS bypass via pre-encoded entities like &lt;script&gt;
   let decoded = caption
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#x27;/g, "'")
     .replace(/&#39;/g, "'")
-    .replace(/&#x2F;/g, '/')
-    .replace(/&#47;/g, '/');
-  
+    .replace(/&#x2F;/g, "/")
+    .replace(/&#47;/g, "/");
+
   // Step 2: Limit length and strip HTML tags
-  decoded = decoded
-    .slice(0, 500)
-    .replace(/<[^>]*>/g, ''); // Strip HTML tags
-  
+  decoded = decoded.slice(0, 500).replace(/<[^>]*>/g, ""); // Strip HTML tags
+
   // Step 3: Re-encode special characters for safe display
   const sanitized = decoded
-    .replace(/&/g, '&amp;')  // Must be first to not double-encode
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
+    .replace(/&/g, "&amp;") // Must be first to not double-encode
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;")
     .trim();
-  
+
   return sanitized || null;
 }
 
@@ -63,11 +62,11 @@ const VIDEO_MAGIC_BYTES: { [key: string]: number[] } = {
   // MP4 / MOV / QuickTime (ftyp box)
   mp4_ftyp: [0x00, 0x00, 0x00], // First 3 bytes vary, check for 'ftyp' at offset 4
   // MP4 specific brands
-  mp4_isom: [0x69, 0x73, 0x6F, 0x6D], // 'isom'
-  mp4_mp41: [0x6D, 0x70, 0x34, 0x31], // 'mp41'
-  mp4_mp42: [0x6D, 0x70, 0x34, 0x32], // 'mp42'
+  mp4_isom: [0x69, 0x73, 0x6f, 0x6d], // 'isom'
+  mp4_mp41: [0x6d, 0x70, 0x34, 0x31], // 'mp41'
+  mp4_mp42: [0x6d, 0x70, 0x34, 0x32], // 'mp42'
   mp4_avc1: [0x61, 0x76, 0x63, 0x31], // 'avc1'
-  mov_qt: [0x71, 0x74, 0x20, 0x20],   // 'qt  ' (QuickTime)
+  mov_qt: [0x71, 0x74, 0x20, 0x20], // 'qt  ' (QuickTime)
   // HEVC/H.265 brands
   hevc_hvc1: [0x68, 0x76, 0x63, 0x31], // 'hvc1'
   hevc_hev1: [0x68, 0x65, 0x76, 0x31], // 'hev1'
@@ -75,7 +74,7 @@ const VIDEO_MAGIC_BYTES: { [key: string]: number[] } = {
 
 async function validateVideoMagicBytes(
   supabase: ReturnType<typeof createClient>,
-  storageKey: string
+  storageKey: string,
 ): Promise<{ valid: boolean; error?: string }> {
   try {
     // Get a signed URL for the file (short-lived for security)
@@ -91,7 +90,7 @@ async function validateVideoMagicBytes(
     const response = await fetch(signedData.signedUrl, {
       method: "GET",
       headers: {
-        "Range": "bytes=0-31",
+        Range: "bytes=0-31",
       },
     });
 
@@ -113,7 +112,10 @@ async function validateVideoMagicBytes(
     const hasFtyp = ftypSignature.every((byte, i) => bytes[4 + i] === byte);
 
     if (!hasFtyp) {
-      return { valid: false, error: "Invalid video format: not an MP4/MOV container" };
+      return {
+        valid: false,
+        error: "Invalid video format: not an MP4/MOV container",
+      };
     }
 
     // Check brand at offset 8 (4 bytes)
@@ -128,12 +130,12 @@ async function validateVideoMagicBytes(
       VIDEO_MAGIC_BYTES.hevc_hev1,
     ];
 
-    const isValidBrand = validBrands.some(validBrand =>
-      validBrand.every((byte, i) => brand[i] === byte)
+    const isValidBrand = validBrands.some((validBrand) =>
+      validBrand.every((byte, i) => brand[i] === byte),
     );
 
     // Also accept common brands that start with 'M' (M4V, etc.)
-    const isM4Brand = bytes[8] === 0x4D; // 'M'
+    const isM4Brand = bytes[8] === 0x4d; // 'M'
 
     if (!isValidBrand && !isM4Brand) {
       // Log the brand for debugging but don't expose to user
@@ -143,7 +145,10 @@ async function validateVideoMagicBytes(
 
     return { valid: true };
   } catch (err) {
-    console.error("Magic bytes validation error:", err);
+    console.error(
+      "Magic bytes validation error:",
+      err instanceof Error ? err.name : "unknown",
+    );
     return { valid: false, error: "File validation failed" };
   }
 }
@@ -176,7 +181,8 @@ serve(async (req) => {
   }
 
   // Extract client info for audit
-  const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+  const clientIP =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
   const userAgent = req.headers.get("user-agent") || null;
 
   try {
@@ -225,19 +231,23 @@ serve(async (req) => {
     }
 
     // Rate limiting check via RPC
-    const { data: rateLimitResult, error: rateLimitError } = await supabaseAdmin.rpc(
-      "check_rate_limit",
-      {
+    const { data: rateLimitResult, error: rateLimitError } =
+      await supabaseAdmin.rpc("check_rate_limit", {
         p_user_id: user.id,
-      },
-    );
+      });
 
     if (rateLimitError) {
-      console.error("Rate limit check error:", rateLimitError.message);
+      console.error(
+        "Rate limit check error:",
+        rateLimitError.code || "unknown",
+      );
       return jsonResponse(
         {
           success: false,
-          error: { code: "RATE_LIMITED", message: "Too many uploads. Please try again later." },
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many uploads. Please try again later.",
+          },
         },
         429,
       );
@@ -247,7 +257,10 @@ serve(async (req) => {
       return jsonResponse(
         {
           success: false,
-          error: { code: "RATE_LIMITED", message: "Too many uploads. Please try again later." },
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many uploads. Please try again later.",
+          },
         },
         429,
       );
@@ -290,7 +303,10 @@ serve(async (req) => {
       return jsonResponse(
         {
           success: false,
-          error: { code: "INVALID_REQUEST", message: "Invalid circleId format" },
+          error: {
+            code: "INVALID_REQUEST",
+            message: "Invalid circleId format",
+          },
         },
         400,
       );
@@ -300,7 +316,10 @@ serve(async (req) => {
       return jsonResponse(
         {
           success: false,
-          error: { code: "INVALID_REQUEST", message: "Invalid patientId format" },
+          error: {
+            code: "INVALID_REQUEST",
+            message: "Invalid patientId format",
+          },
         },
         400,
       );
@@ -311,14 +330,21 @@ serve(async (req) => {
       return jsonResponse(
         {
           success: false,
-          error: { code: "INVALID_REQUEST", message: "Invalid storageKey format" },
+          error: {
+            code: "INVALID_REQUEST",
+            message: "Invalid storageKey format",
+          },
         },
         400,
       );
     }
 
     // Validate numeric fields
-    if (typeof body.durationSeconds !== "number" || body.durationSeconds <= 0 || body.durationSeconds > 120) {
+    if (
+      typeof body.durationSeconds !== "number" ||
+      body.durationSeconds <= 0 ||
+      body.durationSeconds > 120
+    ) {
       return jsonResponse(
         {
           success: false,
@@ -328,7 +354,11 @@ serve(async (req) => {
       );
     }
 
-    if (typeof body.fileSizeBytes !== "number" || body.fileSizeBytes <= 0 || body.fileSizeBytes > 100 * 1024 * 1024) {
+    if (
+      typeof body.fileSizeBytes !== "number" ||
+      body.fileSizeBytes <= 0 ||
+      body.fileSizeBytes > 100 * 1024 * 1024
+    ) {
       return jsonResponse(
         {
           success: false,
@@ -338,7 +368,11 @@ serve(async (req) => {
       );
     }
 
-    if (typeof body.retentionDays !== "number" || body.retentionDays <= 0 || body.retentionDays > 365) {
+    if (
+      typeof body.retentionDays !== "number" ||
+      body.retentionDays <= 0 ||
+      body.retentionDays > 365
+    ) {
       return jsonResponse(
         {
           success: false,
@@ -373,7 +407,9 @@ serve(async (req) => {
     // Verify the reservation exists and belongs to this user (PENDING record from reserve_video_quota)
     const { data: reservation, error: reservationError } = await supabaseAdmin
       .from("video_messages")
-      .select("id, created_by, circle_id, patient_id, status, quota_reserved_bytes")
+      .select(
+        "id, created_by, circle_id, patient_id, status, quota_reserved_bytes",
+      )
       .eq("id", body.videoId)
       .eq("created_by", user.id)
       .eq("status", "PENDING")
@@ -383,9 +419,10 @@ serve(async (req) => {
       return jsonResponse(
         {
           success: false,
-          error: { 
-            code: "INVALID_RESERVATION", 
-            message: "Reservation not found or expired. Please try uploading again." 
+          error: {
+            code: "INVALID_RESERVATION",
+            message:
+              "Reservation not found or expired. Please try uploading again.",
           },
         },
         400,
@@ -397,9 +434,9 @@ serve(async (req) => {
       return jsonResponse(
         {
           success: false,
-          error: { 
-            code: "INVALID_RESERVATION", 
-            message: "Reservation circle mismatch" 
+          error: {
+            code: "INVALID_RESERVATION",
+            message: "Reservation circle mismatch",
           },
         },
         400,
@@ -407,18 +444,23 @@ serve(async (req) => {
     }
 
     // Validate magic bytes of uploaded file
-    const magicBytesResult = await validateVideoMagicBytes(supabaseAdmin, body.storageKey);
+    const magicBytesResult = await validateVideoMagicBytes(
+      supabaseAdmin,
+      body.storageKey,
+    );
     if (!magicBytesResult.valid) {
       // Delete the invalid file
-      await supabaseAdmin.storage.from("video-messages").remove([body.storageKey]);
-      
+      await supabaseAdmin.storage
+        .from("video-messages")
+        .remove([body.storageKey]);
+
       // Release the quota reservation
       await supabaseAdmin.rpc("finalize_video_quota", {
         p_reservation_id: body.videoId,
         p_user_id: user.id,
         p_finalize: false,
       });
-      
+
       return jsonResponse(
         {
           success: false,
@@ -447,20 +489,18 @@ serve(async (req) => {
     }
 
     // Finalize the reservation (update PENDING record to ACTIVE with actual data)
-    const { data: finalizeResult, error: finalizeError } = await supabaseAdmin.rpc(
-      "finalize_video_quota",
-      {
+    const { data: finalizeResult, error: finalizeError } =
+      await supabaseAdmin.rpc("finalize_video_quota", {
         p_reservation_id: body.videoId,
         p_user_id: user.id,
         p_finalize: true,
         p_actual_bytes: body.fileSizeBytes,
         p_storage_key: body.storageKey,
-      },
-    );
+      });
 
     if (finalizeError) {
-      console.error("Finalize error:", finalizeError.message);
-      
+      console.error("Finalize error:", finalizeError.code || "unknown");
+
       // Clean up storage on failure
       await supabaseAdmin.storage
         .from("video-messages")
@@ -469,7 +509,10 @@ serve(async (req) => {
       return jsonResponse(
         {
           success: false,
-          error: { code: "FINALIZE_FAILED", message: "Failed to confirm upload" },
+          error: {
+            code: "FINALIZE_FAILED",
+            message: "Failed to confirm upload",
+          },
         },
         500,
       );
@@ -492,7 +535,7 @@ serve(async (req) => {
       .eq("id", body.videoId);
 
     if (updateError) {
-      console.error("Update error:", updateError.message);
+      console.error("Update error:", updateError.code || "unknown");
       // Non-fatal: the video is already active, just missing some metadata
     }
 
@@ -519,22 +562,24 @@ serve(async (req) => {
       .catch(() => console.warn("Failed to refresh video stats"));
 
     // Log video creation for audit
-    await supabaseAdmin.rpc("log_video_action", {
-      p_video_id: body.videoId,
-      p_user_id: user.id,
-      p_action: "CREATE",
-      p_details: {
-        circle_id: body.circleId,
-        patient_id: body.patientId,
-        file_size_bytes: body.fileSizeBytes,
-        duration_seconds: body.durationSeconds,
-      },
-      p_ip_address: clientIP,
-      p_user_agent: userAgent,
-    }).catch((err: Error) => {
-      // Non-fatal: log but don't fail the request
-      console.warn("Audit logging failed:", err.message);
-    });
+    await supabaseAdmin
+      .rpc("log_video_action", {
+        p_video_id: body.videoId,
+        p_user_id: user.id,
+        p_action: "CREATE",
+        p_details: {
+          circle_id: body.circleId,
+          patient_id: body.patientId,
+          file_size_bytes: body.fileSizeBytes,
+          duration_seconds: body.durationSeconds,
+        },
+        p_ip_address: clientIP,
+        p_user_agent: userAgent,
+      })
+      .catch((err: Error) => {
+        // Non-fatal: log but don't fail the request
+        console.warn("Audit logging failed:", err.name || "unknown");
+      });
 
     return jsonResponse({
       success: true,
@@ -546,7 +591,10 @@ serve(async (req) => {
     return jsonResponse(
       {
         success: false,
-        error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" },
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "An unexpected error occurred",
+        },
       },
       500,
     );
@@ -632,8 +680,8 @@ async function notifyCircleMembers(
   if (!tokens || tokens.length === 0) return;
 
   // Create notification payload (no PHI in logs)
-  const title = `New Video from ${sender?.display_name || "Someone"}`;
-  const body = `A video message for ${patient?.name || "your loved one"} in ${circle?.name || "your circle"}`;
+  const title = "New Video Message";
+  const body = "A new video message has been posted to your care circle.";
 
   // Log notification count only (no PHI)
   console.log("Sending push notifications:", tokens.length);

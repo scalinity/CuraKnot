@@ -395,7 +395,9 @@ struct PatientPlaybackView: View {
                 await MainActor.run {
                     isLoadingVideo = false
                 }
+                #if DEBUG
                 print("Failed to load video: \(error)")
+                #endif
             }
         }
         

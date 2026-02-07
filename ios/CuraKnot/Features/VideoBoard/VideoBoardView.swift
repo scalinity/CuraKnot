@@ -595,7 +595,9 @@ struct VideoDetailSheet: View {
                 try? await videoService.recordView(videoId: video.video.id)
             }
         } catch {
+            #if DEBUG
             print("Failed to load video: \(error)")
+            #endif
         }
     }
 }

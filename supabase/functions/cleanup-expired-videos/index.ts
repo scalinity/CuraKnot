@@ -49,14 +49,25 @@ serve(async (req) => {
 
     // Extract token from Bearer header
     const token = authHeader.replace("Bearer ", "");
-    
+
+    // Timing-safe comparison to prevent timing attacks
+    const encoder = new TextEncoder();
+    const tokenBytes = encoder.encode(token);
+    const keyBytes = encoder.encode(serviceKey);
+    const tokensMatch =
+      tokenBytes.length === keyBytes.length &&
+      crypto.subtle.timingSafeEqual(tokenBytes, keyBytes);
+
     // Only allow service role key - no user tokens for this sensitive operation
-    if (token !== serviceKey) {
+    if (!tokensMatch) {
       console.warn("Cleanup attempt with non-service-role token");
-      return new Response(JSON.stringify({ error: "Unauthorized - service role required" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - service role required" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Initialize Supabase admin client
@@ -178,7 +189,9 @@ async function cleanupExpiredVideos(
       result.deletedCount++;
       result.freedBytes += video.file_size_bytes || 0;
 
-      console.log(`Deleted video ${video.id}, freed ${video.file_size_bytes || 0} bytes`);
+      console.log(
+        `Deleted video ${video.id}, freed ${video.file_size_bytes || 0} bytes`,
+      );
     } catch (videoError) {
       result.errors.push(`Error processing video ${video.id}`);
     }

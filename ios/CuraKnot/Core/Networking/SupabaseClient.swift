@@ -1,4 +1,7 @@
 import Foundation
+import os
+
+private let logger = Logger(subsystem: "com.curaknot.app", category: "SupabaseClient")
 
 // MARK: - Supabase Client
 
@@ -125,9 +128,7 @@ actor SupabaseClient {
         
         // Debug logging (SECURITY: Never log response bodies - may contain PHI)
         #if DEBUG
-        print("🌐 [\(method)] \(requestURL.path)")
-        print("📥 Status: \(httpResponse.statusCode)")
-        // Response bodies intentionally NOT logged to prevent PHI leakage
+        logger.debug("[\(method, privacy: .public)] \(requestURL.path, privacy: .public) -> \(httpResponse.statusCode)")
         #endif
         
         if httpResponse.statusCode >= 400 {

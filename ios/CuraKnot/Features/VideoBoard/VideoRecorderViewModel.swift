@@ -1,6 +1,7 @@
 import Foundation
 @preconcurrency import AVFoundation
 import Combine
+import os
 
 // MARK: - Video Recorder ViewModel
 
@@ -85,6 +86,7 @@ final class VideoRecorderViewModel: NSObject, ObservableObject {
     private var audioDeviceInput: AVCaptureDeviceInput?
     private var recordingTimer: Timer?
     private var outputURL: URL?
+    private var isCancelled = false
 
     nonisolated(unsafe) private let sessionQueue = DispatchQueue(label: "com.curaknot.videocapture")
 
@@ -246,6 +248,8 @@ final class VideoRecorderViewModel: NSObject, ObservableObject {
         guard case .idle = recordingState else { return }
         guard let movieOutput = movieOutput else { return }
 
+        isCancelled = false
+
         // Create output URL
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let timestamp = Int(Date().timeIntervalSince1970)
@@ -288,14 +292,15 @@ final class VideoRecorderViewModel: NSObject, ObservableObject {
     }
 
     func cancelRecording() {
+        isCancelled = true
         recordingTimer?.invalidate()
         recordingTimer = nil
-        
+
         let urlToDelete = outputURL
-        
+
         if case .recording = recordingState {
-            // Stop recording - file cleanup will happen in delegate callback
-            recordingState = .stopping
+            // Stop recording - delegate callback will check isCancelled and clean up
+            recordingState = .idle
             sessionQueue.async { [weak self] in
                 self?.movieOutput?.stopRecording()
                 // Delete file after recording stops (on session queue to avoid race)
@@ -309,8 +314,7 @@ final class VideoRecorderViewModel: NSObject, ObservableObject {
                 try? FileManager.default.removeItem(at: url)
             }
         }
-        
-        recordingState = .idle
+
         recordingDuration = 0
         outputURL = nil
     }
@@ -334,7 +338,7 @@ final class VideoRecorderViewModel: NSObject, ObservableObject {
                 }
             } catch {
                 // Revert on failure
-                print("Failed to flip camera: \(error)")
+                Logger(subsystem: "com.curaknot.app", category: "VideoRecorder").error("Failed to flip camera: \(error.localizedDescription)")
             }
 
             self.captureSession.commitConfiguration()
@@ -375,6 +379,11 @@ final class VideoRecorderViewModel: NSObject, ObservableObject {
 extension VideoRecorderViewModel: AVCaptureFileOutputRecordingDelegate {
     nonisolated func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         Task { @MainActor in
+            // If recording was cancelled, don't transition to .stopped state
+            guard !self.isCancelled else {
+                return
+            }
+
             if let error = error {
                 // Check if it's just the user stopping (not a real error)
                 let nsError = error as NSError
