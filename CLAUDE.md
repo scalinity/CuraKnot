@@ -126,14 +126,14 @@ Any additional context, blockers, or follow-ups.
 
 ### Tech Stack
 
-| Layer         | Technology                                     |
-| ------------- | ---------------------------------------------- |
-| iOS Client    | SwiftUI, Swift 5.9+, iOS 17+                   |
-| Auth          | Supabase Auth (Apple Sign In)                  |
-| Database      | Supabase PostgreSQL with RLS                   |
-| Backend Logic | Supabase Edge Functions (Deno/TypeScript)      |
-| Storage       | Supabase Storage (audio, attachments, exports) |
-| Local DB      | GRDB (offline-first persistence)               |
+| Layer         | Technology                                                |
+| ------------- | --------------------------------------------------------- |
+| iOS Client    | SwiftUI, Swift 5.9+, iOS 17+                              |
+| Auth          | Supabase Auth (Apple Sign In)                             |
+| Database      | Supabase PostgreSQL with RLS                              |
+| Backend Logic | Supabase Edge Functions (Deno/TypeScript)                 |
+| Storage       | Supabase Storage (audio, attachments, exports)            |
+| Local DB      | GRDB (offline-first persistence)                          |
 | AI Services   | ASR (OpenAI `gpt-4o-mini-transcribe`) + LLM (structuring) |
 
 ### Why Supabase-Only (No Separate API Server)
@@ -268,7 +268,7 @@ open CuraKnot.xcodeproj
 Since Apple Sign In requires configuration, DEBUG builds include a dev login option:
 
 1. **Create a test user** in Supabase Dashboard:
-   - Go to: https://supabase.com/dashboard/project/hiafuyxxwodhrmulpitk/auth/users
+   - Go to: https://supabase.com/dashboard/project/<your-project-ref>/auth/users
    - Click "Add user" → "Create new user"
    - Email: `dev@curaknot.test`
    - Password: (your choice)
@@ -314,13 +314,13 @@ xcodebuild test \
 
 Required environment variables for Edge Functions (set in Supabase Dashboard):
 
-| Variable           | Purpose                                              |
-| ------------------ | ---------------------------------------------------- |
+| Variable           | Purpose                                                   |
+| ------------------ | --------------------------------------------------------- |
 | `OPENAI_API_KEY`   | OpenAI API key for transcription (gpt-4o-mini-transcribe) |
-| `LLM_API_KEY`      | LLM for structuring (e.g., OpenAI)                   |
-| `APNS_KEY_ID`      | Push notifications                                   |
-| `APNS_TEAM_ID`     | Push notifications                                   |
-| `APNS_PRIVATE_KEY` | Push notifications (base64)                          |
+| `LLM_API_KEY`      | LLM for structuring (e.g., OpenAI)                        |
+| `APNS_KEY_ID`      | Push notifications                                        |
+| `APNS_TEAM_ID`     | Push notifications                                        |
+| `APNS_PRIVATE_KEY` | Push notifications (base64)                               |
 
 ### iOS Configuration
 
@@ -364,39 +364,39 @@ SENTRY_DSN=your-sentry-dsn
 
 ### Tables
 
-| Table                      | Purpose                                     |
-| -------------------------- | ------------------------------------------- |
-| `users`                    | User profiles (extends auth.users)          |
-| `circles`                  | Care circles                                |
-| `circle_members`           | Circle membership with roles                |
-| `circle_invites`           | Pending invitations                         |
-| `patients`                 | Care recipients                             |
-| `handoffs`                 | Handoff metadata and current state          |
-| `handoff_revisions`        | Append-only revision history                |
-| `tasks`                    | Actionable items with assignments           |
-| `binder_items`             | Medications, contacts, facilities, etc.     |
-| `attachments`              | Photos, PDFs, audio files                   |
-| `read_receipts`            | Handoff read tracking                       |
-| `audit_events`             | Security audit log                          |
-| `inbox_items`              | Quick capture items for triage              |
-| `inbox_triage_log`         | Audit log for triage decisions              |
-| `financial_items`          | Bills, claims, EOBs, receipts               |
-| `financial_item_tasks`     | Links financial items to tasks              |
-| `emergency_cards`          | Emergency info cards per patient            |
-| `emergency_card_fields`    | Custom fields for emergency cards           |
-| `care_shifts`              | Care coverage shifts                        |
-| `shift_checklist_templates`| Reusable shift checklists                   |
-| `med_scan_sessions`        | OCR medication scan sessions                |
-| `med_proposals`            | Proposed medication changes from scans      |
-| `member_stats`             | Aggregated stats for delegation             |
-| `task_tags`                | Tags for task categorization                |
-| `organizations`            | B2B employer/insurer organizations          |
-| `organization_admins`      | Admin users for organizations               |
-| `benefit_codes`            | Employer benefit redemption codes           |
-| `subscriptions`            | User subscription status and plan           |
-| `usage_metrics`            | Metered feature usage tracking              |
-| `subscription_events`      | Subscription change audit log               |
-| `plan_limits`              | Feature limits per plan (config)            |
+| Table                       | Purpose                                 |
+| --------------------------- | --------------------------------------- |
+| `users`                     | User profiles (extends auth.users)      |
+| `circles`                   | Care circles                            |
+| `circle_members`            | Circle membership with roles            |
+| `circle_invites`            | Pending invitations                     |
+| `patients`                  | Care recipients                         |
+| `handoffs`                  | Handoff metadata and current state      |
+| `handoff_revisions`         | Append-only revision history            |
+| `tasks`                     | Actionable items with assignments       |
+| `binder_items`              | Medications, contacts, facilities, etc. |
+| `attachments`               | Photos, PDFs, audio files               |
+| `read_receipts`             | Handoff read tracking                   |
+| `audit_events`              | Security audit log                      |
+| `inbox_items`               | Quick capture items for triage          |
+| `inbox_triage_log`          | Audit log for triage decisions          |
+| `financial_items`           | Bills, claims, EOBs, receipts           |
+| `financial_item_tasks`      | Links financial items to tasks          |
+| `emergency_cards`           | Emergency info cards per patient        |
+| `emergency_card_fields`     | Custom fields for emergency cards       |
+| `care_shifts`               | Care coverage shifts                    |
+| `shift_checklist_templates` | Reusable shift checklists               |
+| `med_scan_sessions`         | OCR medication scan sessions            |
+| `med_proposals`             | Proposed medication changes from scans  |
+| `member_stats`              | Aggregated stats for delegation         |
+| `task_tags`                 | Tags for task categorization            |
+| `organizations`             | B2B employer/insurer organizations      |
+| `organization_admins`       | Admin users for organizations           |
+| `benefit_codes`             | Employer benefit redemption codes       |
+| `subscriptions`             | User subscription status and plan       |
+| `usage_metrics`             | Metered feature usage tracking          |
+| `subscription_events`       | Subscription change audit log           |
+| `plan_limits`               | Feature limits per plan (config)        |
 
 ### Naming Conventions
 
@@ -696,7 +696,8 @@ serve(async (req) => {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      "Access-Control-Allow-Headers":
+        "authorization, x-client-info, apikey, content-type",
     },
   });
 });
@@ -721,15 +722,16 @@ supabase functions logs transcribe-handoff
 
 ### Plan Tiers
 
-| Plan   | Price          | Key Limits                          |
-| ------ | -------------- | ----------------------------------- |
-| FREE   | $0             | 1 circle, 3 members, 10 audio/mo    |
-| PLUS   | $9.99/mo       | 2 circles, 8 members, unlimited     |
-| FAMILY | $19.99/mo      | 5 circles, 20 members, all features |
+| Plan   | Price     | Key Limits                          |
+| ------ | --------- | ----------------------------------- |
+| FREE   | $0        | 1 circle, 3 members, 10 audio/mo    |
+| PLUS   | $9.99/mo  | 2 circles, 8 members, unlimited     |
+| FAMILY | $19.99/mo | 5 circles, 20 members, all features |
 
 ### Feature Gating
 
 Check feature access in iOS:
+
 ```swift
 // Check if user has access to a feature
 let hasAccess = await subscriptionManager.hasFeature("discharge_wizard")
@@ -742,28 +744,29 @@ if !usage.allowed {
 ```
 
 Check in Edge Functions:
+
 ```typescript
 // Check feature access
-const hasFeature = await supabase.rpc('has_feature_access', {
+const hasFeature = await supabase.rpc("has_feature_access", {
   p_user_id: user.id,
-  p_feature: 'discharge_wizard'
+  p_feature: "discharge_wizard",
 });
 
 // Check and increment usage
-const usage = await supabase.rpc('check_usage_limit', {
+const usage = await supabase.rpc("check_usage_limit", {
   p_user_id: user.id,
   p_circle_id: circleId,
-  p_metric_type: 'AUDIO_HANDOFF'
+  p_metric_type: "AUDIO_HANDOFF",
 });
 
 if (!usage.allowed) {
-  return new Response('Limit reached', { status: 402 });
+  return new Response("Limit reached", { status: 402 });
 }
 
-await supabase.rpc('increment_usage', {
+await supabase.rpc("increment_usage", {
   p_user_id: user.id,
   p_circle_id: circleId,
-  p_metric_type: 'AUDIO_HANDOFF'
+  p_metric_type: "AUDIO_HANDOFF",
 });
 ```
 
@@ -779,12 +782,12 @@ await supabase.rpc('increment_usage', {
 
 ### Soft-Gated Features (metered)
 
-| Metric Type    | FREE   | PLUS   | FAMILY    |
-| -------------- | ------ | ------ | --------- |
-| AUDIO_HANDOFF  | 10/mo  | ∞      | ∞         |
-| AI_MESSAGE     | 5/mo   | 50/mo  | ∞         |
-| EXPORT         | 2/mo   | ∞      | ∞         |
-| STORAGE_BYTES  | 500MB  | 10GB   | 50GB      |
+| Metric Type   | FREE  | PLUS  | FAMILY |
+| ------------- | ----- | ----- | ------ |
+| AUDIO_HANDOFF | 10/mo | ∞     | ∞      |
+| AI_MESSAGE    | 5/mo  | 50/mo | ∞      |
+| EXPORT        | 2/mo  | ∞     | ∞      |
+| STORAGE_BYTES | 500MB | 10GB  | 50GB   |
 
 ---
 

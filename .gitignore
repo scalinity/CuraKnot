@@ -12,7 +12,12 @@ ios/*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 *.perspectivev3
 *.xccheckout
 *.xcscmblueprint
+*.xcresult
 xcuserdata/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
 
 # SPM build artifacts
 ios/.build/
@@ -28,7 +33,14 @@ supabase/.temp/
 .env.*.local
 
 # Claude Code
-.claude/command-history.log
+.claude/
+.claudecommandhistory
+
+# Cursor
+.cursor/
+
+# Scratchpad (dev notes)
+SCRATCHPAD.md
 
 # Node
 node_modules/

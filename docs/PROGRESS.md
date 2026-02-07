@@ -4,6 +4,36 @@
 
 ---
 
+## [2026-02-07] Respite Care Finder — Review Hardening (R12-R15)
+
+**Type:** Bugfix / Security / Performance
+**Status:** Complete
+
+### Summary
+
+Comprehensive hardening of the Respite Care Finder feature through 15 rounds of 10-agent parallel review, achieving 10/10 scores from all review agents.
+
+### Changes
+
+- **File:** `ios/CuraKnot/Features/RespiteFinder/RespiteFinderService.swift` — FREE tier can browse directory; radius clamped 1-500mi; minRating/maxPrice upper bounds; localized string hoisted outside loop; UTF-8-safe string truncation
+- **File:** `ios/CuraKnot/Features/RespiteFinder/RespiteFinderViewModel.swift` — Localized all 9 commonServices strings
+- **File:** `ios/CuraKnot/Features/RespiteFinder/RespiteModels.swift` — Two static MeasurementFormatters for distance; ratingStars bounds clamping
+- **File:** `ios/CuraKnot/Features/RespiteFinder/Views/RespiteHistoryView.swift` — Localized "Provider" fallback; parallel data loading with cancellation
+- **File:** `ios/CuraKnot/SharedUI/String+InputSanitization.swift` — Binary search UTF-8 truncation utility
+- **File:** `supabase/functions/search-respite-providers/index.ts` — NaN guards, website URL validation, error detail removal
+- **File:** `supabase/functions/submit-respite-request/index.ts` — Error detail removal
+- **File:** `supabase/migrations/20260221000014_respite_care_round12_fixes.sql` — BEFORE UPDATE triggers, WITH CHECK immutability, subscription enforcement
+- **File:** `supabase/migrations/20260221000015_respite_care_round13_fixes.sql` — Subscription enforcement on reviews UPDATE policy
+
+### Testing
+
+- [x] All 15 RespiteFinderTests pass
+- [x] iOS build succeeds
+- [x] Deno type-check passes for all 3 Edge Functions
+- [x] 10 review agents scored 10/10
+
+---
+
 ## [2026-02-07] Care Cost Projection Tool
 
 **Type:** Feature

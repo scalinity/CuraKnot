@@ -12,7 +12,7 @@ interface ExpenseRecord {
 
 const ALLOWED_ORIGINS = [
   "http://localhost:54321",
-  "https://hiafuyxxwodhrmulpitk.supabase.co",
+  Deno.env.get("SUPABASE_URL")!,
 ];
 
 function getCorsHeaders(req: Request): Record<string, string> {
