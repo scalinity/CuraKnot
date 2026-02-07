@@ -36,12 +36,32 @@ final class DependencyContainer: ObservableObject {
 }
 
 enum Configuration {
-    private static let productionURL = "https://hiafuyxxwodhrmulpitk.supabase.co"
-    private static let productionAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpYWZ1eXh4d29kaHJtdWxwaXRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyOTc2ODQsImV4cCI6MjA4NTg3MzY4NH0.1WW9llaSuMwMyirTYSsP7DEUfw7pO4bNV9xFJavVZ68"
+    // Local Supabase defaults (standard dev JWT — safe to commit)
     private static let localURL = "http://localhost:54321"
     private static let localAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
-    static var supabaseURL: URL { if let s = ProcessInfo.processInfo.environment["SUPABASE_URL"], let u = URL(string: s) { return u }; return URL(string: productionURL)! }
-    static var supabaseAnonKey: String { if let k = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"] { return k }; return productionAnonKey }
+
+    // Production credentials loaded from Info.plist (injected via xcconfig or Xcode build settings)
+    private static var productionURL: String {
+        Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String ?? ""
+    }
+    private static var productionAnonKey: String {
+        Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String ?? ""
+    }
+
+    static var supabaseURL: URL {
+        // 1. Environment variable (CI / testing override)
+        if let s = ProcessInfo.processInfo.environment["SUPABASE_URL"], let u = URL(string: s) { return u }
+        // 2. Info.plist (production builds via xcconfig)
+        if !productionURL.isEmpty, let u = URL(string: productionURL) { return u }
+        // 3. Fallback to local dev
+        return URL(string: localURL)!
+    }
+
+    static var supabaseAnonKey: String {
+        if let k = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"] { return k }
+        if !productionAnonKey.isEmpty { return productionAnonKey }
+        return localAnonKey
+    }
 }
 
 class HandoffService { let databaseManager: DatabaseManager; let supabaseClient: SupabaseClient; let syncCoordinator: SyncCoordinator; init(databaseManager: DatabaseManager, supabaseClient: SupabaseClient, syncCoordinator: SyncCoordinator) { self.databaseManager = databaseManager; self.supabaseClient = supabaseClient; self.syncCoordinator = syncCoordinator } }

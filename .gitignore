@@ -1,49 +1,183 @@
+# ============================================================================
+# CuraKnot .gitignore — Comprehensive rules for public GitHub safety
+# ============================================================================
+
+# ========================
 # macOS
+# ========================
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
 *.swp
 *~
 
-# Xcode
-ios/DerivedData/
-ios/*.xcworkspace/xcuserdata/
-ios/*.xcodeproj/xcuserdata/
-ios/*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+# ========================
+# Xcode — User data & build artifacts
+# ========================
+# User-specific Xcode data (NEVER commit)
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
 *.pbxuser
+!default.pbxuser
 *.perspectivev3
+!default.perspectivev3
 *.xccheckout
 *.xcscmblueprint
-*.xcresult
-xcuserdata/
+
+# Build outputs
 build/
+DerivedData/
+ios/DerivedData/
+
+# Test results (can be huge)
+*.xcresult
+
+# Archives & exports
 *.ipa
 *.dSYM.zip
 *.dSYM
+*.xcarchive
 
-# SPM build artifacts
+# Xcode workspace settings (machine-specific)
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+
+# Playground data
+timeline.xctimeline
+playground.xcworkspace
+
+# ========================
+# Swift Package Manager
+# ========================
 ios/.build/
 ios/.swiftpm/
+.build/
+.swiftpm/
+Packages/
+Package.pins
+Package.resolved
+!ios/Package.resolved
 
+# ========================
+# CocoaPods (if ever used)
+# ========================
+Pods/
+Podfile.lock
+
+# ========================
 # Supabase
+# ========================
 .supabase/
 supabase/.temp/
+supabase/.env
+supabase/.env.*
 
-# Environment
+# ========================
+# Environment & Secrets — CRITICAL
+# ========================
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.local
 
+# iOS configuration with real credentials
+ios/Config.xcconfig
+ios/*.xcconfig
+!ios/*.xcconfig.example
+
+# Certificates, keys, keystores
+*.p8
+*.p12
+*.pem
+*.key
+*.keystore
+*.jks
+*.cer
+*.mobileprovision
+*.provisionprofile
+signing_keys.json
+
+# ========================
+# AI / Editor / IDE tools
+# ========================
 # Claude Code
 .claude/
 .claudecommandhistory
 
 # Cursor
 .cursor/
+.cursorignore
+.cursorindexingignore
 
-# Scratchpad (dev notes)
-SCRATCHPAD.md
+# VS Code (optional — uncomment if you want to ignore)
+# .vscode/
 
-# Node
+# JetBrains
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+Session.vim
+.netrwhist
+
+# ========================
+# Node.js / Deno
+# ========================
 node_modules/
-
-# Deno
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 deno.lock
+
+# ========================
+# Dev notes & scratchpads
+# ========================
+SCRATCHPAD.md
+SECURITY_AUDIT_*.md
+docs/SECURITY_AUDIT_*.md
+*.scratch
+*.tmp
+*.bak
+
+# ========================
+# Logs & crash reports
+# ========================
+*.log
+crash_reports/
+*.crash
+
+# ========================
+# OS-generated files
+# ========================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ========================
+# Large / binary files (safety net)
+# ========================
+*.mp4
+*.mov
+*.avi
+*.m4a
+*.mp3
+*.wav
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+# Allow specific committed assets
+!ios/CuraKnot/Resources/**/*.png
+!ios/CuraKnot/Resources/**/*.jpg
+!ios/CuraKnot/Resources/**/*.pdf
